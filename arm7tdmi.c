@@ -871,9 +871,9 @@ void arm7_execute_thumb(uint32_t opcode)
         printf("Unknown instruction at PC=%x", r15 - 4);
 	}
 
-    arm7_regdump();
-    char test[1337];
-    gets(test);
+    //arm7_regdump();
+    //char test[1337];
+    //gets(test);
 }
 
 void arm7_execute(uint32_t opcode)
@@ -994,7 +994,13 @@ uint32_t arm7_read(uint32_t ptr)
 
 void arm7_writeb(uint32_t ptr, uint8_t value)
 {
-    testmem[ptr] = value;
+    if (ptr & 1) // Is the address misaligned?
+    {
+        arm7_writeh( ptr & 0xFFFFFFFE, (value << 8) | value );
+        return;
+    }
+    arm7_writeh(ptr, (value << 8) | value);
+    //testmem[ptr] = value;
 }
 
 void arm7_writeh(uint32_t ptr, uint16_t value)
