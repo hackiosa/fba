@@ -207,6 +207,9 @@ uint8_t testmem[0x9000000];
 /* This resets the virtual cpu to its origin state */
 void arm7_reset()
 {
+    // Zero init memory...
+    memset(testmem, 0, 0x9000000);
+
     gprs[0] = &r0;
     gprs[1] = &r1;
     gprs[2] = &r2;
@@ -233,7 +236,7 @@ void arm7_reset()
     pipe_state = 0;
 
     // test
-    FILE* f = fopen("rom.gba", "rb");
+    FILE* f = fopen("rom2.gba", "rb");
     int size;
     fseek(f, 0, SEEK_END);
     size = ftell(f);
@@ -247,12 +250,12 @@ void arm7_reset()
 
     //clock_t t = clock();
 
-    while (true)
+    /*while (true)
     {
         char bla[666];
         arm7_step();
         gets(bla);
-    }
+    }*/
 
     //t = clock
     //() - t;
@@ -348,7 +351,7 @@ void arm7_execute_thumb(uint32_t opcode)
 {
     /* Execution logic goes here */
 	uint32_t op = opcode;
-    printf("%x\n", op);
+    printf("Opcode: %x\n", op);
 	if ((op & 0xF800) == 0x0) { // lsl rd, rs, imm5
         uint32_t rd = op & 7;
         uint32_t rs = (op >> 3) & 7;
@@ -575,12 +578,12 @@ void arm7_execute_thumb(uint32_t opcode)
         uint32_t rb = (op >> 3) & 7;
         uint32_t ro = (op >> 6) & 7;
         arm7_writeh(reg(rb) + reg(ro), reg(rd));
-    } else if ((op & 0xFE00) == 0x5600) { // ldrh rd, [rb, ro]
+    } else if ((op & 0xFE00) == 0x5A00) { // ldrh rd, [rb, ro]
         uint32_t rd = op & 7;
         uint32_t rb = (op >> 3) & 7;
         uint32_t ro = (op >> 6) & 7;
         reg(rd) = arm7_readh(reg(rb) + reg(ro));
-    } else if ((op & 0xFE00) == 0x5A00) { // ldsb rd, [rb, ro]
+    } else if ((op & 0xFE00) == 0x5600) { // ldsb rd, [rb, ro]
         uint32_t rd = op & 7;
         uint32_t rb = (op >> 3) & 7;
         uint32_t ro = (op >> 6) & 7;
@@ -598,13 +601,13 @@ void arm7_execute_thumb(uint32_t opcode)
         uint32_t rd = op & 7;
         uint32_t rb = (op >> 3) & 7;
         uint32_t imm5 = (op >> 6) & 31;
-        arm7_write(reg(rd), reg(rb) + (imm5 << 2));
-    } else if ((op & 0xF800) == 0x7000) { // ldr rd, [rb, imm5]
+        arm7_write(reg(rb) + (imm5 << 2), reg(rd));
+    } else if ((op & 0xF800) == 0x6800) { // ldr rd, [rb, imm5]
         uint32_t rd = op & 7;
         uint32_t rb = (op >> 3) & 7;
         uint32_t imm5 = (op >> 6) & 31;
         reg(rd) = arm7_read(reg(rb) + (imm5 << 2));
-    } else if ((op & 0xF800) == 0x6800) { // strb rd, [rb, imm5]
+    } else if ((op & 0xF800) == 0x7000) { // strb rd, [rb, imm5]
         uint32_t rd = op & 7;
         uint32_t rb = (op >> 3) & 7;
         uint32_t imm5 = (op >> 6) & 31;
@@ -869,6 +872,8 @@ void arm7_execute_thumb(uint32_t opcode)
 	}
 
     arm7_regdump();
+    char test[1337];
+    gets(test);
 }
 
 void arm7_execute(uint32_t opcode)
