@@ -37,6 +37,9 @@
         else cpsr &= ~(FLAG_ZERO);\
 }
 
+#define cond_overflow_add(r, op1, op2) ((op1) >> 31 == (op2) >> 31) && ((r) >> 31 != (op2) >> 31)
+#define cond_overflow_sub(r, op1, op2) ((op1) >> 31 != (op2) >> 31) && ((r) >> 31 == (op2) >> 31)
+
 #define LSL(rd,rs,n) {\
     if ((n) > 0) {\
         bool_carry( (reg(rs) << ((n) - 1)) & 0x80000000 );\
@@ -89,7 +92,7 @@
     uint64_t result64 = (uint64_t)reg(rs) + (uint64_t)(n);\
     uint32_t result = reg(rs) + (n);\
     bool_carry(result64 & 0x100000000);\
-    bool_overflow( (result >> 31 != reg(rs) >> 31) && (reg(rs) >> 31 == (n) >> 31) );\
+    bool_overflow( cond_overflow_add(result, reg(rs), n) );\
     reg(rd) = result;\
     update_sign(reg(rd));\
     update_zero(reg(rd));\
@@ -99,7 +102,7 @@
 #define SUBS(rd,rs,n) {\
     uint32_t result = reg(rs) - (n);\
     bool_carry(reg(rs) >= (n));\
-    bool_overflow( (result >> 31 != reg(rs) >> 31) && (reg(rs) >> 31 == (n) >> 31) );\
+    bool_overflow( cond_overflow_sub(result, reg(rs), n) );\
     reg(rd) = result;\
     update_sign(reg(rd));\
     update_zero(reg(rd));\
@@ -109,7 +112,7 @@
 #define CMP(rs,n) {\
     uint32_t result = reg(rs) - (n);\
     bool_carry(reg(rs) >= (n));\
-    bool_overflow( (result >> 31 != reg(rs) >> 31) && (reg(rs) >> 31 == (n) >> 31) );\
+    bool_overflow( cond_overflow_sub(result, reg(rs), n) );\
     update_sign(result);\
     update_zero(result);\
 }
@@ -120,7 +123,7 @@
     uint64_t result64 = (uint64_t)reg(rs) + (uint64_t)(n) + (uint64_t)CARRY;\
     uint32_t result = reg(rs) + (n) + CARRY;\
     bool_carry(result64 & 0x100000000);\
-    bool_overflow( (result >> 31 != reg(rs) >> 31) && (reg(rs) >> 31 == (n) >> 31) && (reg(rs) >> 31 == 0) );\
+    bool_overflow( cond_overflow_add(result, reg(rs), n + CARRY) );\
     reg(rd) = result;\
     update_sign(reg(rd));\
     update_zero(reg(rd));\
@@ -131,7 +134,7 @@
 #define SBCS(rd,rs,n) {\
     uint32_t result = reg(rs) - (n) - !CARRY;\
     bool_carry(reg(rs) >= (n));\
-    bool_overflow( (result >> 31 != reg(rs) >> 31) && (reg(rs) >> 31 == (n) >> 31) && (reg(rs) >> 31 == 0) );\
+    bool_overflow( cond_overflow_sub(result, reg(rs), n) );\
     reg(rd) = result;\
     update_sign(reg(rd));\
     update_zero(reg(rd));\
@@ -141,7 +144,7 @@
 #define RSBS(rd,rs,n) {\
     uint32_t result = (n) - reg(rs);\
     bool_carry((n) >= reg(rs));\
-    bool_overflow( (result >> 31 != reg(rs) >> 31) && (reg(rs) >> 31 == (n) >> 31) );\
+    bool_overflow( cond_overflow_sub(result, n, reg(rs)) );\
     reg(rd) = result;\
     update_sign(reg(rd));\
     update_zero(reg(rd));\
@@ -151,7 +154,7 @@
     uint64_t result64 = (uint64_t)reg(rs) + (uint64_t)(n);\
     uint32_t result = reg(rs) + (n);\
     bool_carry(result64 & 0x100000000);\
-    bool_overflow( (result >> 31 != reg(rs) >> 31) && (reg(rs) >> 31 == (n) >> 31) );\
+    bool_overflow( cond_overflow_add(result, reg(rs), n) );\
     update_sign(result);\
     update_zero(result);\
 }
@@ -247,20 +250,6 @@ void arm7_reset()
     reg(13) = 0x03007F00;
     r15 = 0x8000108;
     //arm7_writeh(0, 0x3001);
-
-    //clock_t t = clock();
-
-    /*while (true)
-    {
-        char bla[666];
-        arm7_step();
-        gets(bla);
-    }*/
-
-    //t = clock
-    //() - t;
-    //double time_taken = ((double)t) / CLOCKS_PER_SEC;
-    //printf("Time taken: %f", time_taken);
     //while (true) {}
 }
 
@@ -351,7 +340,7 @@ void arm7_execute_thumb(uint32_t opcode)
 {
     /* Execution logic goes here */
 	uint32_t op = opcode;
-    printf("Opcode: %x\n", op);
+    //printf("Opcode: %x\n", op);
 	if ((op & 0xF800) == 0x0) { // lsl rd, rs, imm5
         uint32_t rd = op & 7;
         uint32_t rs = (op >> 3) & 7;

@@ -8,9 +8,9 @@ uint32_t* buffer;
 
 void setpixel(int x, int y, int c)
 {
-    SDL_LockSurface(screen);
+    //SDL_LockSurface(screen);
     buffer[y * 240 + x] = c;
-    SDL_UnlockSurface(screen);
+    //SDL_UnlockSurface(screen);
     SDL_UpdateRect(screen, x, y, 1, 1);
 }
 
@@ -42,18 +42,29 @@ void drawtile(int x, int y, int n, int p)
     }
 }
 
+void cpu_scheudele()
+{
+    while (true);
+    {
+        puts("HI");
+        arm7_step();
+    }
+}
+
 int main(int argc, char** argv)
 {
     SDL_Event event;
     bool running = true;
+
+    freopen( "CON", "w", stdout );
+    freopen( "CON", "w", stderr );
+    arm7_reset();
 
     if (SDL_Init(SDL_INIT_EVERYTHING) != 0)
     {
         printf("SDL_Init Error: %s\n", SDL_GetError());
         return 1;
     }
-    freopen( "CON", "w", stdout );
-    freopen( "CON", "w", stderr );
 
     screen = SDL_SetVideoMode(240, 160, 32, SDL_SWSURFACE);
     if (screen == NULL)
@@ -65,11 +76,9 @@ int main(int argc, char** argv)
 
     SDL_WM_SetCaption("FakeBoyAdvance", "FakeBoyAdvance");
 
-    arm7_reset();
-
     while (running)
     {
-        for (int i = 0; i < 10000; i++)
+        for (int i = 0; i < 100000; i++)
             arm7_step();
         for (int y = 0; y < 20; y++)
         {
