@@ -123,7 +123,7 @@
     uint64_t result64 = (uint64_t)reg(rs) + (uint64_t)(n) + (uint64_t)CARRY;\
     uint32_t result = reg(rs) + (n) + CARRY;\
     bool_carry(result64 & 0x100000000);\
-    bool_overflow( cond_overflow_add(result, reg(rs), n + CARRY) );\
+    bool_overflow( cond_overflow_add(result, reg(rs), n) );\
     reg(rd) = result;\
     update_sign(reg(rd));\
     update_zero(reg(rd));\
