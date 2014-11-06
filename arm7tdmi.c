@@ -230,7 +230,7 @@ void arm7_reset()
     //printf("%d\n", reg(0));
 
     cpsr = 0x1F;
-    cpsr |= 0b100000;
+    //cpsr |= 0b100000;
     arm7_update_gprs();
 
     for (int i = 0; i < 16; i++)
@@ -248,7 +248,7 @@ void arm7_reset()
     fclose(f);
     reg(0) = 0x08000109;
     reg(13) = 0x03007F00;
-    r15 = 0x8000108;
+    r15 = 0x8000000; //0x8000108;
     //arm7_writeh(0, 0x3001);
     //while (true) {}
 }
@@ -860,19 +860,19 @@ void arm7_execute_thumb(uint32_t opcode)
         printf("Unknown instruction at PC=%x", r15 - 4);
 	}
 
-    //arm7_regdump();
-    //char test[1337];
-    //gets(test);
+    arm7_regdump();
+    char test[1337];
+    gets(test);
 }
 
-void arm7_execute(uint32_t opcode)
+void arm7_execute(uint32_t op)
 {
     /* Execution logic goes here */
     uint32_t pc = r15 - 8;
     bool cond_given = false;
     //printf("PC: 0x%x OP: 0x%x\n", ptr, dec_data->opcode);
 
-    switch (opcode >> 28)
+    switch (op >> 28)
     {
     case 0x0: cond_given = (cpsr & FLAG_ZERO) == FLAG_ZERO; break;
     case 0x1: cond_given = (cpsr & FLAG_ZERO) != FLAG_ZERO; break;
@@ -894,8 +894,34 @@ void arm7_execute(uint32_t opcode)
 
     if (cond_given)
     {
-        // ...
+        if ((op & 0xFFFFFF0) == 0x12FFF10) { // branch with exchange
+            uint32_t rn = op & 0xF;
+            if (!(reg(rn) & 1))
+            {
+                cpsr &= 0xFFFFFFDF;
+                r15 = reg(rn) & 0xFFFFFFFC;
+            } else {
+                r15 = reg(rn) & 0xFFFFFFFE;
+            }
+            pipe_state = 0; // Clear the pipeline!!!!111elf
+            branched = true;
+        } else if ((op & 0xE000000) == 0xA000000) { // branch / branch with link
+            uint32_t offset = op & 0xFFFFFF;
+            if ((offset & 0x800000) == 0x800000)
+            {
+                offset |= 0xFF000000;
+            }
+            if ((op & 0x1000000) == 0x1000000) // if branch with link
+            {
+                reg(14) = r15 - 4;
+            }
+            r15 += offset << 2;
+        }
     }
+        
+    arm7_regdump();
+    char test[1337];
+    gets(test);
 }
 
 /* Does next processor step */

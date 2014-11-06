@@ -56,8 +56,8 @@ int main(int argc, char** argv)
     SDL_Event event;
     bool running = true;
 
-    freopen( "CON", "w", stdout );
-    freopen( "CON", "w", stderr );
+    //freopen( "CON", "w", stdout );
+    //freopen( "CON", "w", stderr );
     arm7_reset();
 
     if (SDL_Init(SDL_INIT_EVERYTHING) != 0)
